@@ -4,7 +4,6 @@ import (
 	"github.com/DaniilOr/transExportImport/cmd/exporter"
 	"github.com/DaniilOr/transExportImport/cmd/importer"
 	"github.com/DaniilOr/transExportImport/pkg/transaction"
-	"fmt"
 	"log"
 	"os"
 )
@@ -28,10 +27,12 @@ func main() {
 	if err!= nil{
 		os.Exit(1)
 	}
+
+
 	err = svc.ImportJSON("trans.json")
 	if err != nil{
 		os.Exit(1)
 	}
-	fmt.Println(svc.Transactions)
+
 }
 
