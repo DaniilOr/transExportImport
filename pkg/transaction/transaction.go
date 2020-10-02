@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"io/ioutil"
 	"log"
 	"strconv"
 	"sync"
@@ -103,15 +104,34 @@ func (s * Service) MapRowToTransaction(row[]string) (Transaction, error){
 
 }
 
-func (s*Service) ImportJSON(file []byte) error{
+func (s*Service) ExportJSON(filename string) error{
+
+	encoded, err := json.Marshal(s.Transactions)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	err = ioutil.WriteFile(filename, encoded, 0644)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+func (s*Service) ImportJSON(filename string) error{
+	file, err := ioutil.ReadFile(filename)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
 	var decoded []Transaction
-	err := json.Unmarshal(file, &decoded)
+	err = json.Unmarshal(file, &decoded)
 	if err!= nil{
 		log.Println(err)
 		return err
 	}
 	for _, t := range decoded{
-		s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
+		go s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
 	}
 	return nil
 }
