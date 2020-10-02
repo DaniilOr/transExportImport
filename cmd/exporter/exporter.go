@@ -1,8 +1,10 @@
 package exporter
 
 import (
+	"encoding/json"
 	"github.com/DaniilOr/transExportImport/pkg/transaction"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 )
@@ -23,6 +25,19 @@ func ExecuteExport(filename string, svc * transaction.Service) (err error){
 		}
 	}(file)
 	err = svc.Export(file)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+func ExecuteExportJSON(filename string, svc * transaction.Service) (err error){
+	encoded, err := json.Marshal(svc.Transactions)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	err = ioutil.WriteFile(filename, encoded, 0644)
 	if err != nil{
 		log.Println(err)
 		return err

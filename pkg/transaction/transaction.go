@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"strconv"
 	"sync"
@@ -16,13 +15,13 @@ var (
 )
 
 type Transaction struct{
-	Id int64 `json:"id"`
-	From string `json:"from"`
-	To string `json:"to"`
-	MCC string `json:"mcc"`
-	Status string `json:"status"`
-	Date time.Time `json:"date"`
-	Amount int64 `json:"amount"`
+	Id int64 `json:"id" xml:"id"`
+	From string `json:"from" xml:"from"`
+	To string `json:"to" xml:"to"`
+	MCC string `json:"mcc" xml:"mcc"`
+	Status string `json:"status" xml:"status"`
+	Date time.Time `json:"date" xml:"date"`
+	Amount int64 `json:"amount" xml:"amount"`
 }
 type Service struct{
 	mu sync.Mutex
@@ -104,20 +103,15 @@ func (s * Service) MapRowToTransaction(row[]string) (Transaction, error){
 
 }
 
-func (s*Service) ImportJSON(filename string) error{
-	file, err := ioutil.ReadFile(filename)
-	if err != nil{
-		log.Println(err)
-		return err
-	}
+func (s*Service) ImportJSON(file []byte) error{
 	var decoded []Transaction
-	err = json.Unmarshal(file, &decoded)
+	err := json.Unmarshal(file, &decoded)
 	if err!= nil{
 		log.Println(err)
 		return err
 	}
 	for _, t := range decoded{
-		go s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
+		s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
 	}
 	return nil
 }
@@ -126,17 +120,6 @@ func NewService() *Service{
 }
 
 
-func (s*Service) ExportJSON(filename string) error{
 
-	encoded, err := json.Marshal(s.Transactions)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	err = ioutil.WriteFile(filename, encoded, 0644)
-	if err != nil{
-		log.Println(err)
-		return err
-	}
-	return nil
-}
+
+
