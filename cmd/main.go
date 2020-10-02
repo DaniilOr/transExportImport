@@ -23,16 +23,16 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
-	err = svc.ExportJSON("trans.json")
+	err = svc.ExportXML("trans.xml")
 	if err!= nil{
 		os.Exit(1)
 	}
 
+	svc = transaction.NewService()
 
-	err = svc.ImportJSON("trans.json")
+	err = svc.ImportXML("trans.xml")
 	if err != nil{
 		os.Exit(1)
 	}
-
 }
 

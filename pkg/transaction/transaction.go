@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
+	"io/ioutil"
 	"log"
 	"strconv"
 	"sync"
@@ -103,16 +104,34 @@ func (s * Service) MapRowToTransaction(row[]string) (Transaction, error){
 
 }
 
-func (s*Service) ImportXML(file []byte) error{
+func (s*Service) ImportXML(file string) error{
+	data, err := ioutil.ReadFile(file)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
+	var decoded []Transaction
+	err = xml.Unmarshal(data, &decoded)
+	for _, t := range decoded{
+		s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
+	}
 	return nil
 }
-func (s*Service) ExportXML(file []byte) error{
+func (s*Service) ExportXML(file string) error{
 
 	encoded, err := xml.Marshal(s.Transactions)
 	if err != nil {
 		log.Println(err)
+		return err
 	}
 	encoded = append([]byte(xml.Header), encoded...)
-
+	err = ioutil.WriteFile(file, encoded, 0644)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
 	return nil
+}
+func NewService() *Service{
+	return &Service{sync.Mutex{}, []*Transaction{},}
 }
