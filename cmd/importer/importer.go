@@ -37,7 +37,6 @@ func ExecuteImportJSON(filename string, svc * transaction.Service) (err error){
 		log.Println(err)
 		return err
 	}
-
 	err = svc.ImportJSON(file)
 	if err != nil{
 		log.Println(err)
