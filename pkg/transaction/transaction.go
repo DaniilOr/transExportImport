@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"log"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -52,28 +51,12 @@ func (s * Service) Export(writer io.Writer) error{
 	return w.WriteAll(records)
 }
 
-func (s * Service) Import(filename string) (err error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	s.mu.Lock()
-	defer func(c io.Closer) {
-		if cerr := c.Close(); cerr != nil {
-			if err != nil{
-				log.Println(err)
-				s.mu.Unlock()
-			}
-		}
-	}(file)
+func (s * Service) Import(file io.Reader) (err error) {
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
 	if err != nil {
-		s.mu.Unlock()
 		log.Println(err)
 	}
-	s.mu.Unlock()
 	for _,row:=range records{
 		transaction, err := s.MapRowToTransaction(row)
 		if err != nil{

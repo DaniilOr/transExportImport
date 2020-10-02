@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -8,13 +9,15 @@ import (
 )
 
 func main() {
-	//err := execute("test.csv")
+
 	svc := transaction.NewService()
-	err := svc.Import("test.csv")
+
+	err := executeImport("test.csv", svc)
 	if err != nil{
 		log.Println(err)
 		os.Exit(1)
 	}
+	fmt.Println(svc.Transactions)
 	err = executeExport("test1.csv", svc)
 	if err != nil{
 		log.Println(err)
@@ -38,6 +41,30 @@ func executeExport(filename string, svc * transaction.Service) (err error){
 		}
 	}(file)
 	err = svc.Export(file)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func executeImport(filename string, svc * transaction.Service) (err error){
+	file, err := os.Open(filename)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
+	defer func(c io.Closer) {
+		currentErr := c.Close()
+		if currentErr != nil{
+			log.Print(currentErr)
+			if err == nil{
+				err = currentErr
+			}
+		}
+	}(file)
+
+	err = svc.Import(file)
 	if err != nil{
 		log.Println(err)
 		return err
