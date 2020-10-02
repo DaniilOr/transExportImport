@@ -2,8 +2,10 @@ package transaction
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -15,20 +17,20 @@ var (
 )
 
 type Transaction struct{
-	Id int64
-	From string
-	To string
-	MCC string
-	Status string
-	Date time.Time
-	Amount int64
+	Id int64 `json:"id"`
+	From string `json:"from"`
+	To string `json:"to"`
+	MCC string `json:"mcc"`
+	Status string `json:"status"`
+	Date time.Time `json:"date"`
+	Amount int64 `json:"amount"`
 }
 type Service struct{
 	mu sync.Mutex
 	Transactions []*Transaction
 }
 
-func (s * Service) Export(writer io.Writer) error{
+func (s * Service) ExportCSV(writer io.Writer) error{
 	s.mu.Lock()
 	if len(s.Transactions) == 0{
 		s.mu.Unlock()
@@ -52,7 +54,7 @@ func (s * Service) Export(writer io.Writer) error{
 	return w.WriteAll(records)
 }
 
-func (s * Service) Import(filename string) (err error) {
+func (s * Service) ImportCSV(filename string) (err error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		log.Println(err)
@@ -72,6 +74,7 @@ func (s * Service) Import(filename string) (err error) {
 	if err != nil {
 		s.mu.Unlock()
 		log.Println(err)
+		return err
 	}
 	s.mu.Unlock()
 	for _,row:=range records{
@@ -118,6 +121,37 @@ func (s * Service) MapRowToTransaction(row[]string) (Transaction, error){
 
 }
 
+func (s*Service) ExportJSON(filename string) error{
+
+	encoded, err := json.Marshal(s.Transactions)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	err = ioutil.WriteFile(filename, encoded, 0644)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+func (s*Service) ImportJSON(filename string) error{
+	file, err := ioutil.ReadFile(filename)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
+	var decoded []Transaction
+	err = json.Unmarshal(file, &decoded)
+	if err!= nil{
+		log.Println(err)
+		return err
+	}
+	for _, t := range decoded{
+		go s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
+	}
+	return nil
+}
 func NewService() *Service{
 	return &Service{sync.Mutex{}, []*Transaction{},}
 }

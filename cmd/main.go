@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -10,7 +11,7 @@ import (
 func main() {
 	//err := execute("test.csv")
 	svc := transaction.NewService()
-	err := svc.Import("test.csv")
+	err := svc.ImportCSV("test.csv")
 	if err != nil{
 		log.Println(err)
 		os.Exit(1)
@@ -20,6 +21,15 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
+	err = svc.ExportJSON("trans.json")
+	if err!= nil{
+		os.Exit(1)
+	}
+	err = svc.ImportJSON("trans.json")
+	if err != nil{
+		os.Exit(1)
+	}
+	fmt.Println(svc.Transactions)
 }
 
 func executeExport(filename string, svc * transaction.Service) (err error){
@@ -37,7 +47,7 @@ func executeExport(filename string, svc * transaction.Service) (err error){
 			}
 		}
 	}(file)
-	err = svc.Export(file)
+	err = svc.ExportCSV(file)
 	if err != nil{
 		log.Println(err)
 		return err
