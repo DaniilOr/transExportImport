@@ -75,7 +75,11 @@ func (s * Service) Import(filename string) (err error) {
 	}
 	s.mu.Unlock()
 	for _,row:=range records{
-		s.MapRowToTransaction(row)
+		transaction, err := s.MapRowToTransaction(row)
+		if err != nil{
+			return  err
+		}
+		s.Register(transaction.Id, transaction.From, transaction.To, transaction.MCC, transaction.Amount, transaction.Status, transaction.Date)
 	}
 	if err != nil{
 		return err
@@ -90,27 +94,28 @@ func (s * Service) Register(id int64, from string, to string, mcc string, amount
 	s.mu.Unlock()
 }
 
-func (s * Service) MapRowToTransaction(row[]string){
+func (s * Service) MapRowToTransaction(row[]string) (Transaction, error){
 	if(len(row) != 7){
 		log.Println(ErrSpecificationMisspatch)
-		os.Exit(1)
+		return Transaction{}, ErrSpecificationMisspatch
 	}
 	id, err := strconv.ParseInt(row[0], 10, 64)
 	if err != nil {
 		log.Println(err)
-		os.Exit(1)
+		return Transaction{}, err
 	}
 	date, err := strconv.ParseInt(row[5], 10, 64)
 	if err!=nil{
 		log.Println(err)
-		os.Exit(1)
+		return Transaction{}, err
 		}
 	amount, err := strconv.ParseInt(row[6], 10, 64)
 	if err != nil{
 		log.Println(err)
-		os.Exit(1)
+		return Transaction{}, err
 	}
-	s.Register(id, row[1], row[2], row[3], amount, row[4], time.Unix(date, 0))
+	return Transaction{id, row[1], row[2], row[3], row[4],time.Unix(date, 0),  amount,}, nil
+
 }
 
 func NewService() *Service{

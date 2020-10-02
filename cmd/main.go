@@ -4,21 +4,25 @@ import (
 	"io"
 	"log"
 	"os"
-	"transExportImport/pkg/transaction"
+	"github.com/DaniilOr/transExportImport/pkg/transaction"
 )
 
 func main() {
 	//err := execute("test.csv")
 	svc := transaction.NewService()
-	svc.Import("test.csv")
-	err := execute("test1.csv", svc)
+	err := svc.Import("test.csv")
+	if err != nil{
+		log.Println(err)
+		os.Exit(1)
+	}
+	err = executeExport("test1.csv", svc)
 	if err != nil{
 		log.Println(err)
 		os.Exit(1)
 	}
 }
 
-func execute(filename string, svc * transaction.Service) (err error){
+func executeExport(filename string, svc * transaction.Service) (err error){
 	file, err := os.Create(filename)
 	if err != nil{
 		log.Println(err)
