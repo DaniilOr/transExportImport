@@ -4,6 +4,7 @@ import (
 	"github.com/DaniilOr/transExportImport/cmd/exporter"
 	"github.com/DaniilOr/transExportImport/cmd/importer"
 	"github.com/DaniilOr/transExportImport/pkg/transaction"
+	"fmt"
 	"log"
 	"os"
 )
@@ -13,6 +14,7 @@ func main() {
 	svc := transaction.NewService()
 
 	err := importer.ExecuteImport("test.csv", svc)
+
 	if err != nil{
 		log.Println(err)
 		os.Exit(1)
@@ -22,5 +24,14 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
+	err = svc.ExportJSON("trans.json")
+	if err!= nil{
+		os.Exit(1)
+	}
+	err = svc.ImportJSON("trans.json")
+	if err != nil{
+		os.Exit(1)
+	}
+	fmt.Println(svc.Transactions)
 }
 
