@@ -117,7 +117,7 @@ func (s*Service) ImportJSON(filename string) error{
 		return err
 	}
 	for _, t := range decoded{
-		go s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
+		s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
 	}
 	return nil
 }
