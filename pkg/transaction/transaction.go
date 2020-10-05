@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -105,15 +106,33 @@ func (s * Service) MapRowToTransaction(row[]string) (Transaction, error){
 }
 
 func (s*Service) ImportXML(file string) error{
-	data, err := ioutil.ReadFile(file)
-	if err != nil{
+	data, err := os.Open(file)
+	if err != nil {
 		log.Println(err)
 		return err
 	}
-	var decoded []Transaction
-	err = xml.Unmarshal(data, &decoded)
-	for _, t := range decoded{
-		s.Register(t.Id, t.From, t.To, t.MCC, t.Amount, t.Status, t.Date)
+	defer data.Close()
+	decoder := xml.NewDecoder(data)
+	for {
+		tok, err := decoder.Token()
+		if err == io.EOF{
+			break
+		}
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		if tok == nil {
+			break
+		}
+		switch tp := tok.(type) {
+		case xml.StartElement:
+			if tp.Name.Local == "Transaction" {
+				var transaction Transaction
+				decoder.DecodeElement(&transaction, &tp)
+				s.Transactions = append(s.Transactions, &transaction)
+			}
+		}
 	}
 	return nil
 }
