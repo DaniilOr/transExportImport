@@ -66,7 +66,7 @@ func (s * Service) Import(file io.Reader) (err error) {
 		if err != nil{
 			return  err
 		}
-		s.Register(transaction.Id, transaction.From, transaction.To, transaction.MCC, transaction.Amount, transaction.Status, transaction.Date)
+		s.Register(transaction)
 	}
 	if err != nil{
 		return err
@@ -74,10 +74,9 @@ func (s * Service) Import(file io.Reader) (err error) {
 	return nil
 }
 
-func (s * Service) Register(id int64, from string, to string, mcc string, amount int64, status string, date time.Time){
+func (s * Service) Register(transaction Transaction){
 	s.mu.Lock()
-	trans := &Transaction{id, from, to, mcc, status, date, amount}
-	s.Transactions = append(s.Transactions, trans)
+	s.Transactions = append(s.Transactions, &transaction)
 	s.mu.Unlock()
 }
 
