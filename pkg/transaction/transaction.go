@@ -2,9 +2,12 @@ package transaction
 
 import (
 	"encoding/csv"
+	"encoding/xml"
 	"errors"
 	"io"
+	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -14,13 +17,13 @@ var (
 )
 
 type Transaction struct{
-	Id int64
-	From string
-	To string
-	MCC string
-	Status string
-	Date time.Time
-	Amount int64
+	Id int64 `xml:"id"`
+	From string `xml:"from"`
+	To string `xml:"to"`
+	MCC string `xml:"mcc"`
+	Status string `xml:"status"`
+	Date time.Time `xml:"date"`
+	Amount int64 `xml:"amount"`
 }
 type Service struct{
 	mu sync.Mutex
@@ -56,13 +59,14 @@ func (s * Service) Import(file io.Reader) (err error) {
 	records, err := reader.ReadAll()
 	if err != nil {
 		log.Println(err)
+		return err
 	}
 	for _,row:=range records{
 		transaction, err := s.MapRowToTransaction(row)
 		if err != nil{
 			return  err
 		}
-		s.Register(transaction.Id, transaction.From, transaction.To, transaction.MCC, transaction.Amount, transaction.Status, transaction.Date)
+		s.Register(transaction)
 	}
 	if err != nil{
 		return err
@@ -70,10 +74,9 @@ func (s * Service) Import(file io.Reader) (err error) {
 	return nil
 }
 
-func (s * Service) Register(id int64, from string, to string, mcc string, amount int64, status string, date time.Time){
+func (s * Service) Register(transaction Transaction){
 	s.mu.Lock()
-	trans := &Transaction{id, from, to, mcc, status, date, amount}
-	s.Transactions = append(s.Transactions, trans)
+	s.Transactions = append(s.Transactions, &transaction)
 	s.mu.Unlock()
 }
 
@@ -101,7 +104,52 @@ func (s * Service) MapRowToTransaction(row[]string) (Transaction, error){
 
 }
 
+func (s*Service) ImportXML(file string) error{
+	data, err := os.Open(file)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	defer data.Close()
+	decoder := xml.NewDecoder(data)
+	for {
+		tok, err := decoder.Token()
+		if err == io.EOF{
+			break
+		}
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		if tok == nil {
+			break
+		}
+		switch tp := tok.(type) {
+		case xml.StartElement:
+			if tp.Name.Local == "Transaction" {
+				var transaction Transaction
+				decoder.DecodeElement(&transaction, &tp)
+				s.Transactions = append(s.Transactions, &transaction)
+			}
+		}
+	}
+	return nil
+}
+func (s*Service) ExportXML(file string) error{
+
+	encoded, err := xml.Marshal(s.Transactions)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	encoded = append([]byte(xml.Header), encoded...)
+	err = ioutil.WriteFile(file, encoded, 0644)
+	if err != nil{
+		log.Println(err)
+		return err
+	}
+	return nil
+}
 func NewService() *Service{
 	return &Service{sync.Mutex{}, []*Transaction{},}
 }
-
